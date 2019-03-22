@@ -1,0 +1,44 @@
+version: '3'
+services:
+  wordpress-db:
+    image: mysql:5.5.60
+    container_name: wordpress-db
+    ports:
+     - "3306:3306"
+    environment:
+     - MYSQL_ROOT_PASSWORD=r00t
+     - MYSQL_DATABASE=wordpress
+     - MYSQL_USER=usr-wordpress
+     - MYSQL_PASSWORD=pwd-wordpress
+    volumes:
+     - ./mysql_volume:/var/lib/mysql
+  wordpress:
+    image: wordpress
+    environment:
+     - WORDPRESS_DB_HOST=wordpress-db:3306
+     - WORDPRESS_DB_USER=usr-wordpress
+     - WORDPRESS_DB_PASSWORD=pwd-wordpress
+     - WORDPRESS_DB_NAME=wordpress
+    volumes:
+     - ./wordpress_volume:/var/www/html
+    depends_on:
+     - wordpress-db
+  wordpress-nginx:
+    image: nginx
+    ports:
+     - "80:80"
+    volumes:
+     - ./nginx_volume:/etc/nginx
+    depends_on:
+     - wordpress
+  locust:
+    image: grubykarol/locust
+    ports:
+     - 8089:8089
+    environment:
+     - ATTACKED_HOST=http://wordpress-nginx:80
+     - LOCUST_OPTS=-c 10 -r 10
+    volumes:
+     - ./locust_volume:/locust
+    depends_on:
+     - wordpress-nginx
